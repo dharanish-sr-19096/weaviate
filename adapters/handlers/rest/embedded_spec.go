@@ -5794,6 +5794,10 @@ func init() {
           "additionalProperties": {
             "type": "string"
           }
+        },
+        "overwriteAlias": {
+          "description": "Allows ovewriting the collection alias if there is a conflict",
+          "type": "boolean"
         }
       }
     },
@@ -8358,7 +8362,8 @@ func init() {
             "IsNull",
             "ContainsAny",
             "ContainsAll",
-            "ContainsNone"
+            "ContainsNone",
+            "Not"
           ],
           "example": "GreaterThanEqual"
         },
@@ -14510,6 +14515,10 @@ func init() {
           "additionalProperties": {
             "type": "string"
           }
+        },
+        "overwriteAlias": {
+          "description": "Allows ovewriting the collection alias if there is a conflict",
+          "type": "boolean"
         }
       }
     },
@@ -17406,7 +17415,8 @@ func init() {
             "IsNull",
             "ContainsAny",
             "ContainsAll",
-            "ContainsNone"
+            "ContainsNone",
+            "Not"
           ],
           "example": "GreaterThanEqual"
         },

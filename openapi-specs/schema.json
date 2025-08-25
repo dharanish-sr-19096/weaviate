@@ -1800,7 +1800,11 @@
           "additionalProperties": {
             "type": "string"
           }
-        }
+        },
+        "overwriteAlias": {
+            "description": "Allows ovewriting the collection alias if there is a conflict",
+            "type": "boolean"
+       }
       }
     },
     "BackupRestoreResponse": {
@@ -2779,7 +2783,8 @@
             "IsNull",
             "ContainsAny",
             "ContainsAll",
-            "ContainsNone"
+            "ContainsNone",
+            "Not"
           ],
           "example": "GreaterThanEqual"
         },

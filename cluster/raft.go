@@ -58,18 +58,6 @@ func (s *Raft) Open(ctx context.Context, db schema.Indexer) error {
 // Close() is called when the node is shutting down.
 //
 // Shutdown Sequence
-// 1. Mark node as not ready (Kubernetes readiness probe)
-// 2. Transfer leadership if current leader (prevents client requests)
-// 3. Mark as "leaving" in memberlist (still counts for RF)
-// 4. Wait for leaving state propagation (2 seconds)
-// 5. Remove from Raft configuration via RPC
-// 6. Wait for config removal confirmation
-// 7. Shutdown memberlist completely
-// 8. Shutdown Raft operations
-// 9. Close Raft transport
-// 10. Close underlying store
-//
-// and cluster state coordination.
 func (s *Raft) Close(ctx context.Context) (err error) {
 	s.log.Info("shutting down raft sub-system ...")
 
@@ -97,15 +85,6 @@ func (s *Raft) Close(ctx context.Context) (err error) {
 		}
 	}
 
-	// Step 3: Set graceful leave state in metadata (still counts for RF)
-	// This prevents replication factor errors while allowing clean shutdown
-	s.log.Info("setting graceful leave state in metadata (still counts for replication factor)...")
-	if err := s.nodeSelector.Leave(); err != nil {
-		s.log.WithError(err).Warn("failed to set graceful leave state")
-	} else {
-		s.log.Info("successfully set graceful leave state in metadata")
-	}
-
 	// // Step 5: Remove from Raft configuration
 	// s.log.Info("requesting removal from leader via RemovePeer RPC...")
 	// leader := s.store.Leader()
@@ -126,18 +105,26 @@ func (s *Raft) Close(ctx context.Context) (err error) {
 	// 	s.log.Warn("no leader available to request removal from")
 	// }
 
-	// Step 6: Shutdown memberlist completely
-	s.log.Info("shutting down memberlist completely...")
-	if err := s.nodeSelector.Shutdown(30 * time.Second); err != nil {
-		s.store.log.WithError(err).Warn("shutdown memberlist")
-	}
-
 	// Step 7: Shutdown Raft operations
 	s.log.Info("stopping raft operations ...")
 	if s.store.raft != nil {
 		if err := s.store.raft.Shutdown().Error(); err != nil {
 			s.log.WithError(err).Warn("shutdown raft")
 		}
+	}
+
+	// Step X: Set graceful leave state in metadata (still counts for RF)
+	// This prevents replication factor errors while allowing clean shutdown
+	s.log.Info("setting graceful leave state in metadata (still counts for replication factor)...")
+	if err := s.nodeSelector.Leave(); err != nil {
+		s.log.WithError(err).Warn("failed to set graceful leave state")
+	} else {
+		s.log.Info("successfully set graceful leave state in metadata")
+	}
+
+	s.log.Info("shutting down memberlist completely...")
+	if err := s.nodeSelector.Shutdown(30 * time.Second); err != nil {
+		s.store.log.WithError(err).Warn("shutdown memberlist")
 	}
 
 	// Step 8: Close Raft transport

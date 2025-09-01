@@ -138,7 +138,7 @@ func (m *MorphModule) VectorizeBatch(ctx context.Context, objs []*models.Object,
 	return vecs, nil, errs
 }
 
-func (m *MorphModule) MetaInfo() (map[string]interface{}, error) {
+func (m *MorphModule) MetaInfo() (map[string]any, error) {
 	return m.metaProvider.MetaInfo()
 }
 

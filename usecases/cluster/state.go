@@ -301,18 +301,29 @@ func (s *State) ClusterHealthScore() int {
 
 // NodeHostname return hosts address for a specific node name
 func (s *State) NodeHostname(nodeName string) (string, bool) {
-	s.listLock.RLock()
-	defer s.listLock.RUnlock()
+	var addr string
 
-	for _, mem := range s.list.Members() {
-		if mem.Name == nodeName {
-			// TODO: how can we find out the actual data port as opposed to relying on
-			// the convention that it's 1 higher than the gossip port
-			return fmt.Sprintf("%s:%d", mem.Addr.String(), mem.Port+1), true
+	backoffConfig := backoff.NewExponentialBackOff()
+	backoffConfig.InitialInterval = 50 * time.Millisecond
+	backoffConfig.MaxElapsedTime = 1 * time.Second
+
+	err := backoff.Retry(func() error {
+		s.listLock.RLock()
+		defer s.listLock.RUnlock()
+
+		for _, mem := range s.list.Members() {
+			if mem.Name == nodeName {
+				addr = fmt.Sprintf("%s:%d", mem.Addr.String(), mem.Port+1)
+				return nil
+			}
 		}
+		return fmt.Errorf("node %s not found", nodeName)
+	}, backoffConfig)
+	if err != nil {
+		return "", false
 	}
 
-	return "", false
+	return addr, true
 }
 
 // NodeAddress is used to resolve the node name into an ip address without the port

@@ -12,7 +12,6 @@
 package cluster
 
 import (
-	"encoding/json"
 	"fmt"
 	"net"
 	"slices"
@@ -241,19 +240,6 @@ func (s *State) Shutdown(timeout time.Duration) error {
 	return s.list.Shutdown()
 }
 
-func nodeMetadata(m *memberlist.Node) (NodeMetadata, error) {
-	if len(m.Meta) == 0 {
-		return NodeMetadata{}, errors.New("no metadata available")
-	}
-
-	var meta NodeMetadata
-	if err := json.Unmarshal(m.Meta, &meta); err != nil {
-		return NodeMetadata{}, errors.Wrap(err, "unmarshal node metadata")
-	}
-
-	return meta, nil
-}
-
 // AllHostnames for live members, including self.
 func (s *State) AllHostnames() []string {
 	s.listLock.RLock()
@@ -416,7 +402,7 @@ func (s *State) NodeAddress(id string) string {
 	if s.config.Join != "" {
 		joinAddr = strings.Split(s.config.Join, ",")
 	}
-	if s.config.RaftBootstrapExpect > 1 && nodeCount != s.config.RaftBootstrapExpect && len(joinAddr) > 0 {
+	if s.config.RaftBootstrapExpect > 1 && len(nodeCount) != s.config.RaftBootstrapExpect && len(joinAddr) > 0 {
 		s.delegate.log.WithFields(logrus.Fields{
 			"action":     "memberlist_rejoin",
 			"node_count": nodeCount,
